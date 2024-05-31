@@ -29,7 +29,7 @@ pip install geopy unidecode
 ## Uso
 ### Aqui está um exemplo simples para você começar:
 
-````
+```
 from geopy.geocoders import ArcGIS
 from unidecode import unidecode
 
@@ -53,4 +53,12 @@ clean_address = unidecode(address)
 # Imprima o endereço completo e o código postal
 print(f"Endereço: {clean_address}")
 print(f"Código Postal Completo: {postal_code}")
+```
+
+## Contribuindo
+Contribuições são bem-vindas! Por favor, sinta-se à vontade para enviar um Pull Request.
+
+## Licença
+Este projeto está licenciado sob a Licença MIT. Veja o arquivo LICENSE para mais detalhes.
+```Este README.md fornece uma visão geral clara do propósito do projeto, funcionalidades e instruções de uso, ajudando os usuários a entender e começar a usar o Geocoding Cleaner de forma eficaz.
 ```
