@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate Your Geolocation</title>
+    <style>
+        /* Centralizar o conteúdo na página */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Altura total da tela */
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9; /* Cor de fundo suave */
+        }
+
+        /* Estilo para o contêiner principal */
+        .container {
+            text-align: center;
+            background: #ffffff; /* Fundo branco */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Sombra leve */
+            max-width: 400px; /* Largura máxima */
+            width: 100%; /* Ajuste para telas menores */
+        }
+
+        /* Botões */
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Inputs */
+        input {
+            width: calc(100% - 20px); /* Largura responsiva */
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Mensagens de resultado */
+        p {
+            margin: 10px 0;
+            color: #333;
+        }
+
+        /* Títulos */
+        h1, h2 {
+            color: #333;
+        }
+
+        select {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Seletor de idioma -->
+        <select id="language-selector" onchange="changeLanguage()">
+            <option value="en">English</option>
+            <option value="pt">Português</option>
+        </select>
+
+        <h1 id="title">Validate Your Geolocation</h1>
+
+        <!-- Botão para pegar localização atual -->
+        <button id="get-location-button" onclick="getLocation()">Get My Location</button>
+        <p id="result"></p>
+
+        <hr>
+
+        <!-- Formulário para entrada manual -->
+        <h2 id="manual-title">Enter Coordinates Manually</h2>
+        <form id="manual-form">
+            <label id="latitude-label" for="latitude">Latitude:</label>
+            <input type="text" id="latitude" name="latitude" required>
+            <br>
+            <label id="longitude-label" for="longitude">Longitude:</label>
+            <input type="text" id="longitude" name="longitude" required>
+            <br><br>
+            <button type="button" id="find-address-button" onclick="submitCoordinates()">Find Address</button>
+        </form>
+        <p id="manual-result"></p>
+    </div>
+
+    <script>
+        // Variáveis globais
+        const translations = {
+            en: {
+                title: "Validate Your Geolocation",
+                get_location_button: "Get My Location",
+                manual_title: "Enter Coordinates Manually",
+                latitude_label: "Latitude:",
+                longitude_label: "Longitude:",
+                find_address_button: "Find Address",
+                geolocation_not_supported: "Geolocation is not supported by this browser.",
+                error: "Error",
+                address: "Address",
+                unknown_error: "An unknown error occurred"
+            },
+            pt: {
+                title: "Valide Sua Geolocalização",
+                get_location_button: "Obter Minha Localização",
+                manual_title: "Digite as Coordenadas Manualmente",
+                latitude_label: "Latitude:",
+                longitude_label: "Longitude:",
+                find_address_button: "Encontrar Endereço",
+                geolocation_not_supported: "Geolocalização não é suportada por este navegador.",
+                error: "Erro",
+                address: "Endereço",
+                unknown_error: "Ocorreu um erro desconhecido"
+            }
+        };
+
+        let currentLanguage = "en";
+
+        // Função para mudar o idioma
+        function changeLanguage() {
+            currentLanguage = document.getElementById("language-selector").value;
+
+            document.getElementById("title").innerText = translations[currentLanguage]["title"];
+            document.getElementById("get-location-button").innerText = translations[currentLanguage]["get_location_button"];
+            document.getElementById("manual-title").innerText = translations[currentLanguage]["manual_title"];
+            document.getElementById("latitude-label").innerText = translations[currentLanguage]["latitude_label"];
+            document.getElementById("longitude-label").innerText = translations[currentLanguage]["longitude_label"];
+            document.getElementById("find-address-button").innerText = translations[currentLanguage]["find_address_button"];
+        }
+
+        // Pega a localização atual do usuário
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => sendCoordinates(position.coords.latitude, position.coords.longitude),
+                    showError
+                );
+            } else {
+                document.getElementById("result").innerText = translations[currentLanguage]["geolocation_not_supported"];
+            }
+        }
+
+        // Envia as coordenadas para o backend
+        function sendCoordinates(latitude, longitude) {
+            fetch('http://127.0.0.1:5000/reverse-geocode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ latitude, longitude })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("result").innerText = translations[currentLanguage]["error"] + ": " + data.error;
+                } else {
+                    const address = [
+                        data.road || "N/A",
+                        data.house_number || "N/A",
+                        data.neighbourhood || "N/A",
+                        data.city || "N/A",
+                        data.state || "N/A",
+                        data.postcode || "N/A"
+                    ].filter(part => part !== "N/A").join(", ");
+
+                    document.getElementById("result").innerText = translations[currentLanguage]["address"] + ": " + address;
+                }
+            })
+            .catch(error => {
+                document.getElementById("result").innerText = translations[currentLanguage]["unknown_error"] + ": " + error.message;
+            });
+        }
+
+        // Envia coordenadas do formulário manual
+        function submitCoordinates() {
+            const latitude = document.getElementById("latitude").value;
+            const longitude = document.getElementById("longitude").value;
+            sendCoordinates(latitude, longitude);
+        }
+
+        // Tratamento de erros de geolocalização
+        function showError(error) {
+            let message = "";
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    message = translations[currentLanguage]["error"] + ": User denied the request for Geolocation.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = translations[currentLanguage]["error"] + ": Location information is unavailable.";
+                    break;
+                case error.TIMEOUT:
+                    message = translations[currentLanguage]["error"] + ": The request to get user location timed out.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    message = translations[currentLanguage]["error"] + ": An unknown error occurred.";
+                    break;
+            }
+            document.getElementById("result").innerText = message;
+        }
+    </script>
+</body>
+</html>
